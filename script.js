@@ -37,15 +37,134 @@ function initPnlChart() {
     const data = [-200, 800, -400, 1200];
     
     // Create gradient for the chart area
-    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-    gradient.addColorStop(0, 'rgba(0, 196, 140, 0.5)');
-    gradient.addColorStop(0.5, 'rgba(0, 196, 140, 0.25)');
-    gradient.addColorStop(1, 'rgba(0, 196, 140, 0)');
+    const greenGradient = ctx.createLinearGradient(0, 0, 0, 400);
+    greenGradient.addColorStop(0, 'rgba(0, 196, 140, 0.5)');
+    greenGradient.addColorStop(0.5, 'rgba(0, 196, 140, 0.25)');
+    greenGradient.addColorStop(1, 'rgba(0, 196, 140, 0)');
     
-    const negativeGradient = ctx.createLinearGradient(0, 0, 0, 400);
-    negativeGradient.addColorStop(0, 'rgba(255, 92, 92, 0.5)');
-    negativeGradient.addColorStop(0.5, 'rgba(255, 92, 92, 0.25)');
-    negativeGradient.addColorStop(1, 'rgba(255, 92, 92, 0)');
+    const redGradient = ctx.createLinearGradient(0, 0, 0, 400);
+    redGradient.addColorStop(0, 'rgba(255, 92, 92, 0.5)');
+    redGradient.addColorStop(0.5, 'rgba(255, 92, 92, 0.25)');
+    redGradient.addColorStop(1, 'rgba(255, 92, 92, 0)');
+    
+    // Custom plugin to color line segments based on y-value
+    const colorLinePlugin = {
+        id: 'colorLine',
+        beforeDatasetsDraw: function(chart, args, options) {
+            const ctx = chart.ctx;
+            const yAxis = chart.scales.y;
+            const xAxis = chart.scales.x;
+            const dataset = chart.data.datasets[0];
+            const points = dataset.data;
+            
+            // Don't draw the original line
+            chart.getDatasetMeta(0).dataset.draw = function() {};
+            
+            // Draw custom colored line segments
+            ctx.save();
+            ctx.lineWidth = dataset.borderWidth || 2;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            // Apply line tension (curve) if specified
+            const tension = dataset.tension || 0;
+            
+            // Get pixel positions for all points
+            const pixelPoints = points.map(function(value, index) {
+                return {
+                    x: xAxis.getPixelForValue(index),
+                    y: yAxis.getPixelForValue(value),
+                    value: value
+                };
+            });
+            
+            // Draw line segments with appropriate colors
+            for (let i = 0; i < pixelPoints.length - 1; i++) {
+                const p0 = pixelPoints[i];
+                const p1 = pixelPoints[i + 1];
+                
+                // If both points are on the same side of zero, draw a simple line
+                if ((p0.value >= 0 && p1.value >= 0) || (p0.value < 0 && p1.value < 0)) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = p0.value >= 0 ? '#00c48c' : '#ff5c5c';
+                    
+                    if (tension > 0) {
+                        // Draw curved line
+                        const cp1x = p0.x + (p1.x - p0.x) / 3;
+                        const cp1y = p0.y + (p1.y - p0.y) * tension;
+                        const cp2x = p0.x + 2 * (p1.x - p0.x) / 3;
+                        const cp2y = p0.y + (p1.y - p0.y) * (1 - tension);
+                        
+                        ctx.moveTo(p0.x, p0.y);
+                        ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p1.x, p1.y);
+                    } else {
+                        // Draw straight line
+                        ctx.moveTo(p0.x, p0.y);
+                        ctx.lineTo(p1.x, p1.y);
+                    }
+                    
+                    ctx.stroke();
+                } 
+                // If points cross the zero line, we need to find the intersection and draw two segments
+                else {
+                    // Calculate where the line crosses y=0
+                    const zeroY = yAxis.getPixelForValue(0);
+                    let zeroX;
+                    
+                    if (tension > 0) {
+                        // For curved lines, approximate the intersection
+                        // This is a simplified approach - for perfect accuracy would need more complex math
+                        const t = Math.abs(p0.value) / (Math.abs(p0.value) + Math.abs(p1.value));
+                        zeroX = p0.x + (p1.x - p0.x) * t;
+                    } else {
+                        // For straight lines, simple linear interpolation
+                        const t = Math.abs(p0.value) / (Math.abs(p0.value) + Math.abs(p1.value));
+                        zeroX = p0.x + (p1.x - p0.x) * t;
+                    }
+                    
+                    // Draw first segment
+                    ctx.beginPath();
+                    ctx.strokeStyle = p0.value >= 0 ? '#00c48c' : '#ff5c5c';
+                    
+                    if (tension > 0) {
+                        // Draw curved segment from p0 to zero crossing
+                        const cp1x = p0.x + (zeroX - p0.x) / 2;
+                        const cp1y = p0.y + (zeroY - p0.y) * tension;
+                        
+                        ctx.moveTo(p0.x, p0.y);
+                        ctx.quadraticCurveTo(cp1x, cp1y, zeroX, zeroY);
+                    } else {
+                        // Draw straight segment
+                        ctx.moveTo(p0.x, p0.y);
+                        ctx.lineTo(zeroX, zeroY);
+                    }
+                    
+                    ctx.stroke();
+                    
+                    // Draw second segment
+                    ctx.beginPath();
+                    ctx.strokeStyle = p1.value >= 0 ? '#00c48c' : '#ff5c5c';
+                    
+                    if (tension > 0) {
+                        // Draw curved segment from zero crossing to p1
+                        const cp2x = zeroX + (p1.x - zeroX) / 2;
+                        const cp2y = zeroY + (p1.y - zeroY) * tension;
+                        
+                        ctx.moveTo(zeroX, zeroY);
+                        ctx.quadraticCurveTo(cp2x, cp2y, p1.x, p1.y);
+                    } else {
+                        // Draw straight segment
+                        ctx.moveTo(zeroX, zeroY);
+                        ctx.lineTo(p1.x, p1.y);
+                    }
+                    
+                    ctx.stroke();
+                }
+            }
+            
+            ctx.restore();
+        }
+    };
     
     // Create the chart
     const chart = new Chart(ctx, {
@@ -55,18 +174,13 @@ function initPnlChart() {
             datasets: [{
                 label: 'P&L',
                 data: data,
-                borderColor: function(context) {
-                    const index = context.dataIndex;
-                    const value = context.dataset.data[index];
-                    return value >= 0 ? '#00c48c' : '#ff5c5c';
-                },
                 borderWidth: 2,
                 tension: 0.4,
-                fill: true,
-                backgroundColor: function(context) {
-                    const index = context.dataIndex;
-                    const value = context.dataset.data[index];
-                    return value >= 0 ? gradient : negativeGradient;
+                borderColor: '#ff5c5c', // Default color, will be overridden by plugin
+                fill: {
+                    target: 'origin',
+                    above: greenGradient,   // Area above zero line is green
+                    below: redGradient      // Area below zero line is red
                 },
                 pointBackgroundColor: function(context) {
                     const index = context.dataIndex;
@@ -77,6 +191,7 @@ function initPnlChart() {
                 pointHoverRadius: 6
             }]
         },
+        plugins: [colorLinePlugin],
         options: {
             responsive: true,
             maintainAspectRatio: false,
@@ -233,13 +348,29 @@ function formatCurrency(value) {
 document.head.insertAdjacentHTML('beforeend', `
 <style>
 .sidebar.collapsed {
-    width: 80px;
+    width: 100px;
 }
 
 .sidebar.collapsed .logo h1,
 .sidebar.collapsed .menu-item span,
 .sidebar.collapsed .beta-tag {
     display: none;
+}
+
+.sidebar.collapsed .sidebar-toggle {
+    position: absolute;
+    top: 20px;
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    text-align: center;
+    color: var(--text-color);
+    font-size: 18px;
+    z-index: 20;
+}
+
+.sidebar.collapsed .sidebar-menu {
+    padding-top: 60px;
 }
 
 .sidebar.collapsed .add-trade-btn {
@@ -250,7 +381,7 @@ document.head.insertAdjacentHTML('beforeend', `
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 20px;
+    margin: 0 auto 20px auto;
 }
 
 .sidebar.collapsed .add-trade-btn i {
@@ -258,12 +389,22 @@ document.head.insertAdjacentHTML('beforeend', `
     font-size: 18px;
 }
 
+.sidebar.collapsed .menu-item i {
+    font-size: 18px;
+    margin-right: 0;
+    width: 100%;
+    text-align: center;
+}
+
 .sidebar.collapsed .add-trade-btn span {
     display: none;
 }
 
 .container.sidebar-collapsed .main-content {
-    margin-right: 80px;
+    margin-left: auto;
+    margin-right: auto;
+    width: calc(100% - 200px); /* 100px on each side for equal spacing */
+    max-width: 1800px; /* Prevent excessive width on very large screens */
 }
 </style>
 `);

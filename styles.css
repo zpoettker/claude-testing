@@ -80,7 +80,7 @@ body {
 }
 
 .add-trade-btn {
-    margin: 0 15px 20px;
+    margin: 0 15px 20px 45px;
     padding: 10px;
     background-color: #f0f0f0;
     color: #333;
@@ -91,6 +91,7 @@ body {
     align-items: center;
     justify-content: center;
     font-weight: 500;
+    width: calc(100% - 60px);
 }
 
 .add-trade-btn i {
@@ -120,7 +121,7 @@ body {
 .menu-item.active {
     background-color: var(--active-color);
     color: var(--text-color);
-    border-right: 3px solid #6366f1;
+    border-right: 3px solid var(--profit-color);
 }
 
 .beta-tag {
@@ -237,15 +238,6 @@ body {
     color: var(--loss-color);
 }
 
-.card-action {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    background: none;
-    border: none;
-    color: var(--text-secondary);
-    cursor: pointer;
-}
 
 .win-loss-indicator {
     display: flex;
@@ -585,7 +577,7 @@ canvas#pnlChart {
 
 .tab.active {
     color: var(--text-color);
-    border-bottom: 2px solid #6366f1;
+    border-bottom: 2px solid var(--profit-color);
 }
 
 .trades-table {
