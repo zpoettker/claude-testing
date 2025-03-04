@@ -34,10 +34,10 @@ Profile page will have the personal information of the user stored for change or
 
     -Upload Trades:
 
-This page will have a dropdown for which account to upload trades to, and will have a dropdown for which broker they are uploading trades from. It will also have an upload box for the user to drop the file. Once the file is uploaded successfully, the user will be navigated back to the dashboard screen, and will get a green prompt professing the successful upload of the trades. If the file is not uploaded successfully, the user will stay on the file upload page, and will receive a red prompt, saying the upload was unseccessful and why.
+This page will have a dropdown for which account to upload trades to, and will have a dropdown for which broker they are uploading trades from. It will also have an upload box for the user to drop the file. Once the file is uploaded successfully, the user will be navigated back to the dashboard screen, and will get a green prompt professing the successful upload of the trades. If the file is not uploaded successfully, the user will stay on the file upload page, and will receive a red prompt, saying the upload was unsuccessful and why.
 
 
 Tech Stack:
 
 Front-End: HTML, CSS, JavaScript
-Back-End: I will need help with what languages and tools are avialable to me for backend as I am fairly new to it, but currently I am aiming at using Next.JS, SQL, and a database like firebase.
+Back-End: I will need help with what languages and tools are avaliable to me for backend as I am fairly new to it, but currently I am aiming at using Next.JS, SQL, and a database like firebase.

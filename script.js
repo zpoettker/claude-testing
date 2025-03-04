@@ -1,270 +1,56 @@
+let chartInstance = null; // Global variable to store chart instance
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM fully loaded');
     
-    // Initialize P&L Chart
-    setTimeout(() => {
-        try {
-            initPnlChart();
-            console.log('Chart initialized');
-        } catch (error) {
-            console.error('Error initializing chart:', error);
-        }
-    }, 500);
-    
-    // Initialize event listeners
     initEventListeners();
     console.log('Event listeners initialized');
     
-    // Initialize sample data
     initSampleData();
     console.log('Sample data initialized');
+    
+    // Initialize chart with default range (e.g., February 2025)
+    const defaultStart = new Date('2025-02-01');
+    const defaultEnd = new Date('2025-02-28');
+    updateChart(defaultStart, defaultEnd);
 });
 
-// Initialize the P&L Chart
-function initPnlChart() {
-    console.log('Initializing chart...');
-    const canvas = document.getElementById('pnlChart');
-    
-    if (!canvas) {
-        console.error('Chart canvas element not found');
-        return;
-    }
-    
-    const ctx = canvas.getContext('2d');
-    
-    // Sample data for the chart
-    const labels = ['02/03/25', '02/12/25', '02/19/25', '02/27/25'];
-    const data = [-200, 800, -400, 1200];
-    
-    // Create gradient for the chart area
-    const greenGradient = ctx.createLinearGradient(0, 0, 0, 400);
-    greenGradient.addColorStop(0, 'rgba(0, 196, 140, 0.5)');
-    greenGradient.addColorStop(0.5, 'rgba(0, 196, 140, 0.25)');
-    greenGradient.addColorStop(1, 'rgba(0, 196, 140, 0)');
-    
-    const redGradient = ctx.createLinearGradient(0, 0, 0, 400);
-    redGradient.addColorStop(0, 'rgba(255, 92, 92, 0.5)');
-    redGradient.addColorStop(0.5, 'rgba(255, 92, 92, 0.25)');
-    redGradient.addColorStop(1, 'rgba(255, 92, 92, 0)');
-    
-    // Custom plugin to color line segments based on y-value
-    const colorLinePlugin = {
-        id: 'colorLine',
-        beforeDatasetsDraw: function(chart, args, options) {
-            const ctx = chart.ctx;
-            const yAxis = chart.scales.y;
-            const xAxis = chart.scales.x;
-            const dataset = chart.data.datasets[0];
-            const points = dataset.data;
-            
-            // Don't draw the original line
-            chart.getDatasetMeta(0).dataset.draw = function() {};
-            
-            // Draw custom colored line segments
-            ctx.save();
-            ctx.lineWidth = dataset.borderWidth || 2;
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            
-            // Apply line tension (curve) if specified
-            const tension = dataset.tension || 0;
-            
-            // Get pixel positions for all points
-            const pixelPoints = points.map(function(value, index) {
-                return {
-                    x: xAxis.getPixelForValue(index),
-                    y: yAxis.getPixelForValue(value),
-                    value: value
-                };
-            });
-            
-            // Draw line segments with appropriate colors
-            for (let i = 0; i < pixelPoints.length - 1; i++) {
-                const p0 = pixelPoints[i];
-                const p1 = pixelPoints[i + 1];
-                
-                // If both points are on the same side of zero, draw a simple line
-                if ((p0.value >= 0 && p1.value >= 0) || (p0.value < 0 && p1.value < 0)) {
-                    ctx.beginPath();
-                    ctx.strokeStyle = p0.value >= 0 ? '#00c48c' : '#ff5c5c';
-                    
-                    if (tension > 0) {
-                        // Draw curved line
-                        const cp1x = p0.x + (p1.x - p0.x) / 3;
-                        const cp1y = p0.y + (p1.y - p0.y) * tension;
-                        const cp2x = p0.x + 2 * (p1.x - p0.x) / 3;
-                        const cp2y = p0.y + (p1.y - p0.y) * (1 - tension);
-                        
-                        ctx.moveTo(p0.x, p0.y);
-                        ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p1.x, p1.y);
-                    } else {
-                        // Draw straight line
-                        ctx.moveTo(p0.x, p0.y);
-                        ctx.lineTo(p1.x, p1.y);
-                    }
-                    
-                    ctx.stroke();
-                } 
-                // If points cross the zero line, we need to find the intersection and draw two segments
-                else {
-                    // Calculate where the line crosses y=0
-                    const zeroY = yAxis.getPixelForValue(0);
-                    let zeroX;
-                    
-                    if (tension > 0) {
-                        // For curved lines, approximate the intersection
-                        // This is a simplified approach - for perfect accuracy would need more complex math
-                        const t = Math.abs(p0.value) / (Math.abs(p0.value) + Math.abs(p1.value));
-                        zeroX = p0.x + (p1.x - p0.x) * t;
-                    } else {
-                        // For straight lines, simple linear interpolation
-                        const t = Math.abs(p0.value) / (Math.abs(p0.value) + Math.abs(p1.value));
-                        zeroX = p0.x + (p1.x - p0.x) * t;
-                    }
-                    
-                    // Draw first segment
-                    ctx.beginPath();
-                    ctx.strokeStyle = p0.value >= 0 ? '#00c48c' : '#ff5c5c';
-                    
-                    if (tension > 0) {
-                        // Draw curved segment from p0 to zero crossing
-                        const cp1x = p0.x + (zeroX - p0.x) / 2;
-                        const cp1y = p0.y + (zeroY - p0.y) * tension;
-                        
-                        ctx.moveTo(p0.x, p0.y);
-                        ctx.quadraticCurveTo(cp1x, cp1y, zeroX, zeroY);
-                    } else {
-                        // Draw straight segment
-                        ctx.moveTo(p0.x, p0.y);
-                        ctx.lineTo(zeroX, zeroY);
-                    }
-                    
-                    ctx.stroke();
-                    
-                    // Draw second segment
-                    ctx.beginPath();
-                    ctx.strokeStyle = p1.value >= 0 ? '#00c48c' : '#ff5c5c';
-                    
-                    if (tension > 0) {
-                        // Draw curved segment from zero crossing to p1
-                        const cp2x = zeroX + (p1.x - zeroX) / 2;
-                        const cp2y = zeroY + (p1.y - zeroY) * tension;
-                        
-                        ctx.moveTo(zeroX, zeroY);
-                        ctx.quadraticCurveTo(cp2x, cp2y, p1.x, p1.y);
-                    } else {
-                        // Draw straight segment
-                        ctx.moveTo(zeroX, zeroY);
-                        ctx.lineTo(p1.x, p1.y);
-                    }
-                    
-                    ctx.stroke();
-                }
-            }
-            
-            ctx.restore();
-        }
-    };
-    
-    // Create the chart
-    const chart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'P&L',
-                data: data,
-                borderWidth: 2,
-                tension: 0.4,
-                borderColor: '#ff5c5c', // Default color, will be overridden by plugin
-                fill: {
-                    target: 'origin',
-                    above: greenGradient,   // Area above zero line is green
-                    below: redGradient      // Area below zero line is red
-                },
-                pointBackgroundColor: function(context) {
-                    const index = context.dataIndex;
-                    const value = context.dataset.data[index];
-                    return value >= 0 ? '#00c48c' : '#ff5c5c';
-                },
-                pointRadius: 4,
-                pointHoverRadius: 6
-            }]
-        },
-        plugins: [colorLinePlugin],
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: false,
-                    grid: {
-                        color: 'rgba(255, 255, 255, 0.05)'
-                    },
-                    ticks: {
-                        color: '#8a8d98',
-                        callback: function(value) {
-                            if (value >= 1000) {
-                                return '$' + (value / 1000).toFixed(1) + 'K';
-                            } else if (value <= -1000) {
-                                return '-$' + (Math.abs(value) / 1000).toFixed(1) + 'K';
-                            }
-                            return '$' + value;
-                        }
-                    }
-                },
-                x: {
-                    grid: {
-                        color: 'rgba(255, 255, 255, 0.05)'
-                    },
-                    ticks: {
-                        color: '#8a8d98'
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    backgroundColor: '#1a1d26',
-                    titleColor: '#ffffff',
-                    bodyColor: '#ffffff',
-                    borderColor: '#2a2e3a',
-                    borderWidth: 1,
-                    displayColors: false,
-                    callbacks: {
-                        label: function(context) {
-                            let value = context.parsed.y;
-                            if (value >= 0) {
-                                return '+$' + value.toFixed(2);
-                            } else {
-                                return '-$' + Math.abs(value).toFixed(2);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    });
+// Helper functions for calendar
+function getDaysInMonth(year, month) {
+    return new Date(year, month + 1, 0).getDate();
 }
+
+function getFirstDayOfMonth(year, month) {
+    return new Date(year, month, 1).getDay();
+}
+
+// Sample trade data by date
+const sampleTradeData = {
+    '2025-02-04': { profit: 218, trades: 2, wins: 0, losses: 2 },
+    '2025-02-06': { profit: 285, trades: 5, wins: 0, losses: 5 },
+    '2025-02-11': { profit: -30, trades: 1, wins: 0, losses: 1 },
+    '2025-02-12': { profit: -161, trades: 5, wins: 0, losses: 5 },
+    '2025-02-13': { profit: 323, trades: 3, wins: 2, losses: 1 },
+    '2025-02-14': { profit: 541, trades: 13, wins: 5, losses: 8 },
+    '2025-02-17': { profit: -1340, trades: 12, wins: 1, losses: 11 },
+    '2025-02-19': { profit: 214, trades: 22, wins: 7, losses: 15 },
+    '2025-02-20': { profit: -215, trades: 1, wins: 0, losses: 1 },
+    '2025-02-25': { profit: -268, trades: 2, wins: 0, losses: 2 },
+    '2025-02-26': { profit: 623, trades: 10, wins: 4, losses: 6 },
+    '2025-02-27': { profit: 345, trades: 3, wins: 2, losses: 1 },
+    '2025-02-28': { profit: 489, trades: 11, wins: 2, losses: 9 }
+};
 
 // Initialize event listeners
 function initEventListeners() {
-    // Sidebar toggle
     const sidebarToggle = document.querySelector('.sidebar-toggle');
     const sidebar = document.querySelector('.sidebar');
     const container = document.querySelector('.container');
-    
     sidebarToggle.addEventListener('click', function() {
         sidebar.classList.toggle('collapsed');
         container.classList.toggle('sidebar-collapsed');
-        
-        // Keep hamburger icon for both states
-        // We don't need to change the icon as it will remain as hamburger (fa-bars)
     });
-    
-    // Menu items click
+
     const menuItems = document.querySelectorAll('.menu-item');
     menuItems.forEach(item => {
         item.addEventListener('click', function() {
@@ -272,8 +58,7 @@ function initEventListeners() {
             this.classList.add('active');
         });
     });
-    
-    // Tabs click
+
     const tabs = document.querySelectorAll('.tab');
     tabs.forEach(tab => {
         tab.addEventListener('click', function() {
@@ -281,14 +66,162 @@ function initEventListeners() {
             this.classList.add('active');
         });
     });
-    
-    // Calendar navigation
-    const prevMonthBtn = document.querySelector('.prev-month');
-    const nextMonthBtn = document.querySelector('.next-month');
+
+    const dateRangeToggle = document.querySelector('.date-range-toggle');
+    const dateRangeDropdown = document.querySelector('.date-range-dropdown');
+    let startDate = null, endDate = null;
+
+    dateRangeToggle.addEventListener('click', function() {
+        dateRangeDropdown.style.display = dateRangeDropdown.style.display === 'none' ? 'block' : 'none';
+    });
+
+    const presetButtons = document.querySelectorAll('.preset-btn');
+    presetButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const range = this.dataset.range;
+            const today = new Date('2025-03-03');
+            let start, end;
+
+            switch (range) {
+                case 'last-week':
+                    start = new Date(today);
+                    start.setDate(today.getDate() - today.getDay() - 7);
+                    end = new Date(start);
+                    end.setDate(start.getDate() + 6);
+                    break;
+                case 'this-week':
+                    start = new Date(today);
+                    start.setDate(today.getDate() - today.getDay());
+                    end = new Date(today);
+                    end.setDate(start.getDate() + 6);
+                    break;
+                case 'last-month':
+                    start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                    end = new Date(today.getFullYear(), today.getMonth(), 0);
+                    break;
+                case 'this-month':
+                    start = new Date(today.getFullYear(), today.getMonth(), 1);
+                    end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                    break;
+                case 'this-year':
+                    start = new Date(today.getFullYear(), 0, 1);
+                    end = new Date(today.getFullYear(), 11, 31);
+                    break;
+                case 'ytd':
+                    start = new Date(today.getFullYear(), 0, 1);
+                    end = today;
+                    break;
+            }
+            updateDateRange(start, end);
+            dateRangeDropdown.style.display = 'none';
+        });
+    });
+
+    let currentMiniMonth = 1;
+    let currentMiniYear = 2025;
+    const miniCalendar = document.querySelector('.mini-calendar');
+    const prevMiniMonth = miniCalendar.querySelector('.prev-month');
+    const nextMiniMonth = miniCalendar.querySelector('.next-month');
+    const monthYearDisplay = miniCalendar.querySelector('.month-year');
+    const daysContainer = miniCalendar.querySelector('.days');
+    const selectedRangeDisplay = document.querySelector('.selected-range');
+    const applyRangeBtn = document.querySelector('.apply-range');
+
+    function updateMiniCalendar(year, month) {
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        monthYearDisplay.textContent = `${months[month]} ${year}`;
+        
+        daysContainer.innerHTML = '';
+        const daysInMonth = getDaysInMonth(year, month);
+        const firstDay = getFirstDayOfMonth(year, month);
+
+        for (let i = 0; i < firstDay; i++) {
+            const emptyDay = document.createElement('div');
+            emptyDay.className = 'day disabled';
+            daysContainer.appendChild(emptyDay);
+        }
+
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dayEl = document.createElement('div');
+            dayEl.className = 'day';
+            dayEl.textContent = day;
+            dayEl.addEventListener('click', () => selectDay(year, month, day));
+            daysContainer.appendChild(dayEl);
+        }
+
+        updateSelectedRangeDisplay();
+    }
+
+    function selectDay(year, month, day) {
+        const selectedDate = new Date(year, month, day);
+        if (!startDate || (startDate && endDate)) {
+            startDate = selectedDate;
+            endDate = null;
+        } else if (selectedDate < startDate) {
+            endDate = startDate;
+            startDate = selectedDate;
+        } else {
+            endDate = selectedDate;
+        }
+        updateMiniCalendarStyles();
+        updateSelectedRangeDisplay();
+    }
+
+    function updateMiniCalendarStyles() {
+        const days = daysContainer.querySelectorAll('.day');
+        days.forEach(day => {
+            const dayNum = parseInt(day.textContent);
+            const date = new Date(currentMiniYear, currentMiniMonth, dayNum);
+            day.classList.remove('selected', 'in-range');
+            if (startDate && date.getTime() === startDate.getTime()) day.classList.add('selected');
+            if (endDate && date.getTime() === endDate.getTime()) day.classList.add('selected');
+            if (startDate && endDate && date > startDate && date < endDate) day.classList.add('in-range');
+        });
+    }
+
+    function updateSelectedRangeDisplay() {
+        if (startDate && endDate) {
+            selectedRangeDisplay.textContent = `${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+        } else if (startDate) {
+            selectedRangeDisplay.textContent = `From ${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+        } else {
+            selectedRangeDisplay.textContent = 'Select range';
+        }
+    }
+
+    prevMiniMonth.addEventListener('click', () => {
+        currentMiniMonth--;
+        if (currentMiniMonth < 0) {
+            currentMiniMonth = 11;
+            currentMiniYear--;
+        }
+        updateMiniCalendar(currentMiniYear, currentMiniMonth);
+    });
+
+    nextMiniMonth.addEventListener('click', () => {
+        currentMiniMonth++;
+        if (currentMiniMonth > 11) {
+            currentMiniMonth = 0;
+            currentMiniYear++;
+        }
+        updateMiniCalendar(currentMiniYear, currentMiniMonth);
+    });
+
+    applyRangeBtn.addEventListener('click', () => {
+        if (startDate && endDate) {
+            updateDateRange(startDate, endDate);
+            dateRangeDropdown.style.display = 'none';
+        }
+    });
+
+    updateMiniCalendar(currentMiniYear, currentMiniMonth);
+
+    const prevMonthBtn = document.querySelector('.calendar-section .prev-month');
+    const nextMonthBtn = document.querySelector('.calendar-section .next-month');
     const monthDisplay = document.querySelector('.calendar-nav h3');
-    
-    let currentMonth = 1; // February (0-indexed)
+    let currentMonth = 1;
     let currentYear = 2025;
+    updateCalendar(currentYear, currentMonth);
     
     prevMonthBtn.addEventListener('click', function() {
         currentMonth--;
@@ -296,7 +229,7 @@ function initEventListeners() {
             currentMonth = 11;
             currentYear--;
         }
-        updateCalendarHeader();
+        updateCalendar(currentYear, currentMonth);
     });
     
     nextMonthBtn.addEventListener('click', function() {
@@ -305,46 +238,282 @@ function initEventListeners() {
             currentMonth = 0;
             currentYear++;
         }
-        updateCalendarHeader();
+        updateCalendar(currentYear, currentMonth);
     });
-    
-    function updateCalendarHeader() {
-        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-        monthDisplay.textContent = `${months[currentMonth]} ${currentYear}`;
+
+    function updateCalendar(year, month) {
+        try {
+            const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                          'July', 'August', 'September', 'October', 'November', 'December'];
+            monthDisplay.textContent = `${months[month]} ${year}`;
+            
+            const calendarGrid = document.querySelector('.calendar-grid');
+            calendarGrid.innerHTML = '';
+            
+            const daysInMonth = getDaysInMonth(year, month);
+            const firstDay = getFirstDayOfMonth(year, month);
+
+            for (let i = 0; i < firstDay; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.className = 'calendar-day empty';
+                calendarGrid.appendChild(emptyDay);
+            }
+            
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayDiv = document.createElement('div');
+                dayDiv.className = 'calendar-day';
+                
+                const dayNumber = document.createElement('div');
+                dayNumber.className = 'day-number';
+                dayNumber.textContent = day;
+                
+                dayDiv.appendChild(dayNumber);
+                
+                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                if (sampleTradeData[dateKey]) {
+                    const { profit, trades: tradeCount, wins } = sampleTradeData[dateKey];
+                    dayDiv.className += profit >= 0 ? ' profit' : ' loss';
+                    
+                    const profitDiv = document.createElement('div');
+                    profitDiv.className = 'day-profit';
+                    profitDiv.textContent = formatCurrency(Math.round(profit));
+                    
+                    const tradesDiv = document.createElement('div');
+                    tradesDiv.className = 'day-trades';
+                    tradesDiv.textContent = `${tradeCount} trade${tradeCount === 1 ? '' : 's'}`;
+                    
+                    const percentageDiv = document.createElement('div');
+                    percentageDiv.className = 'day-percentage';
+                    percentageDiv.textContent = `${(wins / tradeCount * 100).toFixed(2)}%`;
+                    
+                    dayDiv.appendChild(profitDiv);
+                    dayDiv.appendChild(tradesDiv);
+                    dayDiv.appendChild(percentageDiv);
+                }
+                
+                calendarGrid.appendChild(dayDiv);
+            }
+        } catch (error) {
+            console.error('Error updating calendar:', error);
+        }
     }
-    
-    // Add Trade button
+
     const addTradeBtn = document.querySelector('.add-trade-btn');
     addTradeBtn.addEventListener('click', function() {
         showAddTradeModal();
     });
+
+    function updateDateRange(start, end) {
+        dateRangeToggle.childNodes[0].textContent = `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+        
+        const metrics = calculateMetrics(start, end);
+        updateDashboardMetrics(metrics);
+        updateChart(start, end); // Update chart with new range
+    }
+
+    function calculateMetrics(start, end) {
+        let netPL = 0, totalTrades = 0, totalWins = 0, totalLosses = 0;
+        let winningDays = 0, losingDays = 0, tradingDays = new Set();
+        let avgWin = 0, avgLoss = 0, winCount = 0, lossCount = 0;
+
+        for (const dateStr in sampleTradeData) {
+            const date = new Date(dateStr);
+            if (date >= start && date <= end) {
+                const dayData = sampleTradeData[dateStr];
+                netPL += dayData.profit;
+                totalTrades += dayData.trades;
+                totalWins += dayData.wins;
+                totalLosses += dayData.losses;
+                tradingDays.add(dateStr);
+
+                if (dayData.profit > 0) winningDays++;
+                else if (dayData.profit < 0) losingDays++;
+
+                if (dayData.wins > 0) {
+                    avgWin += dayData.profit / dayData.wins;
+                    winCount++;
+                }
+                if (dayData.losses > 0) {
+                    avgLoss += Math.abs(dayData.profit) / dayData.losses;
+                    lossCount++;
+                }
+            }
+        }
+
+        const tradeWinPercent = totalTrades > 0 ? (totalWins / totalTrades * 100).toFixed(2) : 0;
+        const dayWinPercent = tradingDays.size > 0 ? (winningDays / tradingDays.size * 100).toFixed(2) : 0;
+        const winLossRatio = avgLoss > 0 ? (avgWin / avgLoss).toFixed(2) : avgWin > 0 ? '∞' : 0;
+
+        return {
+            netPL: Math.round(netPL),
+            tradeWinPercent,
+            dayWinPercent,
+            winLossRatio,
+            totalWins,
+            totalLosses,
+            totalNeutral: totalTrades - totalWins - totalLosses,
+            winningDays,
+            losingDays,
+            neutralDays: tradingDays.size - winningDays - losingDays,
+            avgWin: formatCurrency(Math.round(avgWin / (winCount || 1))),
+            avgLoss: formatCurrency(Math.round(-avgLoss / (lossCount || 1)))
+        };
+    }
+
+    function updateDashboardMetrics(metrics) {
+        const netPLValue = document.querySelector('.card:nth-child(1) .card-value');
+        netPLValue.textContent = formatCurrency(metrics.netPL);
+        netPLValue.classList.remove('profit', 'loss', 'zero');
+        if (metrics.netPL > 0) {
+            netPLValue.classList.add('profit');
+        } else if (metrics.netPL < 0) {
+            netPLValue.classList.add('loss');
+        } else {
+            netPLValue.classList.add('zero');
+        }
+
+        document.querySelector('.card:nth-child(2) .card-value').textContent = `${metrics.tradeWinPercent}%`;
+        document.querySelector('.card:nth-child(2) .indicator.win').textContent = metrics.totalWins;
+        document.querySelector('.card:nth-child(2) .indicator.neutral').textContent = metrics.totalNeutral;
+        document.querySelector('.card:nth-child(2) .indicator.loss').textContent = metrics.totalLosses;
+        document.querySelector('.card:nth-child(3) .card-value').textContent = `${metrics.dayWinPercent}%`;
+        document.querySelector('.card:nth-child(3) .indicator.win').textContent = metrics.winningDays;
+        document.querySelector('.card:nth-child(3) .indicator.neutral').textContent = metrics.neutralDays;
+        document.querySelector('.card:nth-child(3) .indicator.loss').textContent = metrics.losingDays;
+        document.querySelector('.card:nth-child(4) .card-value').textContent = metrics.winLossRatio;
+        document.querySelector('.card:nth-child(4) .win-value').textContent = metrics.avgWin;
+        document.querySelector('.card:nth-child(4) .loss-value').textContent = metrics.avgLoss;
+    }
+
+    function updateChart(start, end) {
+        const canvas = document.getElementById('pnlChart');
+        if (!canvas) {
+            console.error('Chart canvas element not found');
+            return;
+        }
+
+        const ctx = canvas.getContext('2d');
+
+        // Destroy existing chart if it exists
+        if (chartInstance) {
+            chartInstance.destroy();
+        }
+
+        // Gather data for the chart
+        const labels = [];
+        const data = [];
+        let cumulativePL = 0;
+
+        // Sort dates and filter by range
+        const sortedDates = Object.keys(sampleTradeData).sort();
+        sortedDates.forEach(dateStr => {
+            const date = new Date(dateStr);
+            if (date >= start && date <= end) {
+                cumulativePL += sampleTradeData[dateStr].profit;
+                labels.push(dateStr.slice(5)); // e.g., "02-04" from "2025-02-04"
+                data.push(Math.round(cumulativePL)); // Cumulative P&L rounded to whole dollars
+            }
+        });
+
+        // If no data, show a flat line at 0
+        if (labels.length === 0) {
+            labels.push(start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+            labels.push(end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+            data.push(0);
+            data.push(0);
+        }
+
+        // Create new chart
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Cumulative P&L',
+                    data: data,
+                    borderColor: context => {
+                        const index = context.dataIndex;
+                        return data[index] >= 0 ? '#00c48c' : '#ff5c5c'; // Green for positive, red for negative
+                    },
+                    borderWidth: 2,
+                    fill: false, // No fill under the line
+                    tension: 0, // Straight lines
+                    pointBackgroundColor: context => {
+                        const index = context.dataIndex;
+                        return data[index] >= 0 ? '#00c48c' : '#ff5c5c';
+                    },
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    segment: {
+                        borderColor: ctx => {
+                            const p1 = ctx.p1.parsed.y;
+                            const p0 = ctx.p0.parsed.y;
+                            return p1 >= 0 && p0 >= 0 ? '#00c48c' : '#ff5c5c'; // Color segments based on endpoints
+                        }
+                    }
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.05)'
+                        },
+                        ticks: {
+                            color: '#8a8d98',
+                            callback: function(value) {
+                                return '$' + Math.round(value); // Whole dollars
+                            }
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.05)'
+                        },
+                        ticks: {
+                            color: '#8a8d98'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: '#1a1d26',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        borderColor: '#2a2e3a',
+                        borderWidth: 1,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                let value = context.parsed.y;
+                                return (value >= 0 ? '+$' : '-$') + Math.abs(value);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
 }
 
-// Show Add Trade Modal (placeholder)
 function showAddTradeModal() {
     alert('Add Trade functionality would open a modal here');
 }
 
-// Initialize sample data (for demonstration)
 function initSampleData() {
     // This function would normally fetch data from an API or database
-    // For this demo, we're using the hardcoded data in the HTML
-    
-    // You could add code here to dynamically populate the calendar, trades table, etc.
-    // based on real data from an API or database
 }
 
-// Helper function to format currency
 function formatCurrency(value) {
-    if (value >= 1000) {
-        return '$' + (value / 1000).toFixed(1) + 'K';
-    } else if (value <= -1000) {
-        return '-$' + (Math.abs(value) / 1000).toFixed(1) + 'K';
-    }
-    return '$' + value.toFixed(2);
+    return (value >= 0 ? '$' : '-$') + Math.abs(value).toFixed(0);
 }
 
-// Add CSS class for collapsed sidebar
 document.head.insertAdjacentHTML('beforeend', `
 <style>
 .sidebar.collapsed {
@@ -403,8 +572,8 @@ document.head.insertAdjacentHTML('beforeend', `
 .container.sidebar-collapsed .main-content {
     margin-left: auto;
     margin-right: auto;
-    width: calc(100% - 200px); /* 100px on each side for equal spacing */
-    max-width: 1800px; /* Prevent excessive width on very large screens */
+    width: calc(100% - 200px);
+    max-width: 1800px;
 }
 </style>
 `);
