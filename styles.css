@@ -482,9 +482,10 @@ body {
 }
 
 .chart-container {
-    height: 300px;
+    height: 350px; /* Slightly taller for better visibility */
     position: relative;
     width: 100%;
+    max-width: 100%; /* Ensure it fits container */
 }
 
 /* Trades Table */
@@ -719,5 +720,9 @@ td.loss {
     
     .week-card {
         width: 100%;
+    }
+    
+    .chart-container {
+        height: 300px; /* Adjust for smaller screens */
     }
 }

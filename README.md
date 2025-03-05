@@ -41,3 +41,13 @@ Tech Stack:
 
 Front-End: HTML, CSS, JavaScript
 Back-End: I will need help with what languages and tools are avaliable to me for backend as I am fairly new to it, but currently I am aiming at using Next.JS, SQL, and a database like firebase.
+
+Development Process:
+
+Stage 1: Front-end.
+
+a. Work on dashbaord screen till completed.
+b. work on daily journal page
+c. work on next page etc. 
+
+Stage 2: Back-end.
