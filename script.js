@@ -1,19 +1,5 @@
-let chartInstance = null; // Global variable to store chart instance
-
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM fully loaded');
-    
-    initEventListeners();
-    console.log('Event listeners initialized');
-    
-    initSampleData();
-    console.log('Sample data initialized');
-    
-    // Initialize chart with default range (e.g., February 2025)
-    const defaultStart = new Date('2025-02-01');
-    const defaultEnd = new Date('2025-02-28');
-    updateChart(defaultStart, defaultEnd);
-});
+// Global variable to store chart instance
+let chartInstance = null;
 
 // Helper functions for calendar
 function getDaysInMonth(year, month) {
@@ -40,6 +26,179 @@ const sampleTradeData = {
     '2025-02-27': { profit: 345, trades: 3, wins: 2, losses: 1 },
     '2025-02-28': { profit: 489, trades: 11, wins: 2, losses: 9 }
 };
+
+// Define updateChart at the top level so it’s accessible globally
+function updateChart(start, end) {
+    const canvas = document.getElementById('pnlChart');
+    if (!canvas) {
+        console.error('Chart canvas element not found');
+        return;
+    }
+
+    const ctx = canvas.getContext('2d');
+    if (chartInstance) {
+        chartInstance.destroy();
+    }
+
+    // Prepare data
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    const daysInRange = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1; // Include start day
+    const visibleDates = [];
+    const dataPoints = [];
+    let cumulativePL = 0;
+
+    // Generate visible dates and data points (starting at $0)
+    for (let i = 0; i < daysInRange; i++) {
+        const currentDate = new Date(startDate);
+        currentDate.setDate(startDate.getDate() + i);
+        const dateStr = currentDate.toISOString().slice(0, 10); // e.g., "2025-02-04"
+        visibleDates.push(dateStr.slice(5)); // "02-04" for x-axis labels
+
+        if (i === 0) {
+            dataPoints.push({ x: 0, y: 0 }); // Start at $0, x=0
+        } else {
+            if (sampleTradeData[dateStr]) {
+                cumulativePL += sampleTradeData[dateStr].profit;
+            }
+            dataPoints.push({ x: i, y: Math.round(cumulativePL) }); // Use numerical indices for x
+        }
+    }
+
+    // Add invisible zero-crossing points at exact fractional positions
+    const extendedData = [];
+    for (let i = 0; i < dataPoints.length - 1; i++) {
+        const point1 = dataPoints[i];
+        const point2 = dataPoints[i + 1];
+        extendedData.push(point1);
+
+        const y1 = point1.y;
+        const y2 = point2.y;
+        if ((y1 < 0 && y2 > 0) || (y1 > 0 && y2 < 0)) {
+            // Calculate where the line crosses y = 0
+            const x1 = point1.x;
+            const x2 = point2.x;
+            const fraction = Math.abs(y1) / (Math.abs(y1) + Math.abs(y2));
+            const crossX = x1 + (x2 - x1) * fraction;
+
+            // Insert the zero-crossing point at the exact fractional position
+            extendedData.push({ x: crossX, y: 0 });
+        }
+    }
+    extendedData.push(dataPoints[dataPoints.length - 1]); // Add the last point
+
+    // Create the chart
+    chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            datasets: [{
+                label: 'Net P&L',
+                data: extendedData,
+                borderWidth: 2,
+                fill: false,
+                tension: 0, // Jagged line
+                pointRadius: (context) => {
+                    const point = context.raw;
+                    return point.y === 0 ? 0 : 4; // Hide zero-crossing points
+                },
+                pointHoverRadius: (context) => {
+                    const point = context.raw;
+                    return point.y === 0 ? 0 : 6;
+                },
+                segment: {
+                    borderColor: (ctx) => {
+                        const y1 = ctx.p1.parsed.y;
+                        const y2 = ctx.p0.parsed.y;
+                        if (y1 >= 0 && y2 >= 0) return '#00c48c'; // Green above $0
+                        if (y1 <= 0 && y2 <= 0) return '#ff5c5c'; // Red below $0
+                        return y1 > 0 ? '#00c48c' : '#ff5c5c'; // Mixed segment takes endpoint color
+                    }
+                }
+            }, {
+                // Zero line dataset
+                label: 'Zero Line',
+                data: visibleDates.map((_, index) => ({ x: index, y: 0 })),
+                borderColor: '#8a8d98',
+                borderWidth: 1,
+                pointRadius: 0,
+                fill: false,
+                tension: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    type: 'linear', // Use linear scale for numerical x-values
+                    min: 0,
+                    max: visibleDates.length - 1,
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.05)',
+                        drawOnChartArea: true, // Ensure grid lines appear
+                        drawTicks: true // Show ticks at visible dates
+                    },
+                    ticks: {
+                        color: '#8a8d98',
+                        callback: (value, index) => {
+                            return visibleDates[index] || ''; // Show only visible date labels
+                        },
+                        stepSize: 1, // Ensure each date gets a grid line and label
+                        autoSkip: false // Prevent skipping labels
+                    }
+                },
+                y: {
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.05)'
+                    },
+                    ticks: {
+                        color: '#8a8d98',
+                        callback: (value) => '$' + Math.round(value)
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: '#1a1d26',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: '#2a2e3a',
+                    borderWidth: 1,
+                    displayColors: false,
+                    filter: (tooltipItem) => {
+                        // Show tooltip only for visible data points
+                        return tooltipItem.raw.y !== 0;
+                    },
+                    callbacks: {
+                        label: (context) => {
+                            let value = context.parsed.y;
+                            return (value >= 0 ? '+$' : '-$') + Math.abs(value);
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// DOMContentLoaded event listener to initialize the app
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM fully loaded');
+    
+    initEventListeners();
+    console.log('Event listeners initialized');
+    
+    initSampleData();
+    console.log('Sample data initialized');
+    
+    // Initialize chart with default range (February 2025)
+    const defaultStart = new Date('2025-02-01');
+    const defaultEnd = new Date('2025-02-28');
+    updateChart(defaultStart, defaultEnd);
+});
 
 // Initialize event listeners
 function initEventListeners() {
@@ -384,162 +543,6 @@ function initEventListeners() {
         document.querySelector('.card:nth-child(4) .win-value').textContent = metrics.avgWin;
         document.querySelector('.card:nth-child(4) .loss-value').textContent = metrics.avgLoss;
     }
-
-    function updateChart(start, end) {
-        const canvas = document.getElementById('pnlChart');
-        if (!canvas) {
-            console.error('Chart canvas element not found');
-            return;
-        }
-
-        const ctx = canvas.getContext('2d');
-        if (chartInstance) {
-            chartInstance.destroy();
-        }
-
-        // Prepare data
-        const startDate = new Date(start);
-        const endDate = new Date(end);
-        const daysInRange = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1; // Include start day
-        const visibleDates = [];
-        const dataPoints = [];
-        let cumulativePL = 0;
-
-        // Generate visible dates and data points (starting at $0)
-        for (let i = 0; i < daysInRange; i++) {
-            const currentDate = new Date(startDate);
-            currentDate.setDate(startDate.getDate() + i);
-            const dateStr = currentDate.toISOString().slice(0, 10); // e.g., "2025-02-04"
-            visibleDates.push(dateStr.slice(5)); // "02-04" for x-axis labels
-
-            if (i === 0) {
-                dataPoints.push({ x: 0, y: 0 }); // Start at $0, x=0
-            } else {
-                if (sampleTradeData[dateStr]) {
-                    cumulativePL += sampleTradeData[dateStr].profit;
-                }
-                dataPoints.push({ x: i, y: Math.round(cumulativePL) }); // Use numerical indices for x
-            }
-        }
-
-        // Add invisible zero-crossing points at exact fractional positions
-        const extendedData = [];
-        for (let i = 0; i < dataPoints.length - 1; i++) {
-            const point1 = dataPoints[i];
-            const point2 = dataPoints[i + 1];
-            extendedData.push(point1);
-
-            const y1 = point1.y;
-            const y2 = point2.y;
-            if ((y1 < 0 && y2 > 0) || (y1 > 0 && y2 < 0)) {
-                // Calculate where the line crosses y = 0
-                const x1 = point1.x;
-                const x2 = point2.x;
-                const fraction = Math.abs(y1) / (Math.abs(y1) + Math.abs(y2));
-                const crossX = x1 + (x2 - x1) * fraction;
-
-                // Insert the zero-crossing point at the exact fractional position
-                extendedData.push({ x: crossX, y: 0 });
-            }
-        }
-        extendedData.push(dataPoints[dataPoints.length - 1]); // Add the last point
-
-        // Create the chart
-        chartInstance = new Chart(ctx, {
-            type: 'line',
-            data: {
-                datasets: [{
-                    label: 'Net P&L',
-                    data: extendedData,
-                    borderWidth: 2,
-                    fill: false,
-                    tension: 0, // Jagged line
-                    pointRadius: (context) => {
-                        const point = context.raw;
-                        return point.y === 0 ? 0 : 4; // Hide zero-crossing points
-                    },
-                    pointHoverRadius: (context) => {
-                        const point = context.raw;
-                        return point.y === 0 ? 0 : 6;
-                    },
-                    segment: {
-                        borderColor: (ctx) => {
-                            const y1 = ctx.p1.parsed.y;
-                            const y2 = ctx.p0.parsed.y;
-                            if (y1 >= 0 && y2 >= 0) return '#00c48c'; // Green above $0
-                            if (y1 <= 0 && y2 <= 0) return '#ff5c5c'; // Red below $0
-                            return y1 > 0 ? '#00c48c' : '#ff5c5c'; // Mixed segment takes endpoint color
-                        }
-                    }
-                }, {
-                    // Zero line dataset
-                    label: 'Zero Line',
-                    data: visibleDates.map((_, index) => ({ x: index, y: 0 })),
-                    borderColor: '#8a8d98',
-                    borderWidth: 1,
-                    pointRadius: 0,
-                    fill: false,
-                    tension: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: {
-                        type: 'linear', // Use linear scale for numerical x-values
-                        min: 0,
-                        max: visibleDates.length - 1,
-                        grid: {
-                            color: 'rgba(255, 255, 255, 0.05)',
-                            drawOnChartArea: true, // Ensure grid lines appear
-                            drawTicks: true // Show ticks at visible dates
-                        },
-                        ticks: {
-                            color: '#8a8d98',
-                            callback: (value, index) => {
-                                return visibleDates[index] || ''; // Show only visible date labels
-                            },
-                            stepSize: 1, // Ensure each date gets a grid line and label
-                            autoSkip: false // Prevent skipping labels
-                        }
-                    },
-                    y: {
-                        grid: {
-                            color: 'rgba(255, 255, 255, 0.05)'
-                        },
-                        ticks: {
-                            color: '#8a8d98',
-                            callback: (value) => '$' + Math.round(value)
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        backgroundColor: '#1a1d26',
-                        titleColor: '#ffffff',
-                        bodyColor: '#ffffff',
-                        borderColor: '#2a2e3a',
-                        borderWidth: 1,
-                        displayColors: false,
-                        filter: (tooltipItem) => {
-                            // Show tooltip only for visible data points
-                            return tooltipItem.raw.y !== 0;
-                        },
-                        callbacks: {
-                            label: (context) => {
-                                let value = context.parsed.y;
-                                return (value >= 0 ? '+$' : '-$') + Math.abs(value);
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
 }
 
 function showAddTradeModal() {
@@ -554,6 +557,7 @@ function formatCurrency(value) {
     return (value >= 0 ? '$' : '-$') + Math.abs(value).toFixed(0);
 }
 
+// Sidebar collapse styles (unchanged from your original)
 document.head.insertAdjacentHTML('beforeend', `
 <style>
 .sidebar.collapsed {
