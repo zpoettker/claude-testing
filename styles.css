@@ -300,10 +300,16 @@ body {
 }
 
 .calendar-nav {
-    display: flex;
-    align-items: center;
+    position: relative; /* Container for absolute positioning */
     width: 100%;
-    position: relative;
+    text-align: center; /* Center the h3 text */
+    margin-bottom: 10px; /* Spacing below */
+}
+
+.calendar-nav h3 {
+    margin: 0;
+    font-size: 16px;
+    display: inline-block; /* Allow it to sit naturally in the center */
 }
 
 .calendar-nav button {
@@ -312,26 +318,19 @@ body {
     color: var(--text-secondary);
     cursor: pointer;
     font-size: 16px;
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
+    position: absolute; /* Absolute positioning relative to .calendar-nav */
+    top: 50%; /* Vertically center the arrows */
+    transform: translateY(-50%); /* Adjust for button height */
 }
 
 .calendar-nav .prev-month {
-    left: 0;
+    left: calc(50% - 90px); /* Fixed distance left of center */
 }
 
 .calendar-nav .next-month {
-    right: 0;
+    right: calc(50% - 90px); /* Fixed distance right of center */
 }
 
-.calendar-nav h3 {
-    margin: 0;
-    font-size: 16px;
-    width: 100%;
-    text-align: center;
-    padding: 0 40px;
-}
 
 .weekdays {
     display: grid;
