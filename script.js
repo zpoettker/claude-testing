@@ -61,11 +61,11 @@ function updateChart(start, end) {
             if (sampleTradeData[dateStr]) {
                 cumulativePL += sampleTradeData[dateStr].profit;
             }
-            dataPoints.push({ x: i, y: Math.round(cumulativePL) }); // Use numerical indices for x
+            dataPoints.push({ x: i, y: Math.round(cumulativePL) });
         }
     }
 
-    // Add invisible zero-crossing points at exact fractional positions
+    // Add invisible zero-crossing points (unchanged from original)
     const extendedData = [];
     for (let i = 0; i < dataPoints.length - 1; i++) {
         const point1 = dataPoints[i];
@@ -75,17 +75,18 @@ function updateChart(start, end) {
         const y1 = point1.y;
         const y2 = point2.y;
         if ((y1 < 0 && y2 > 0) || (y1 > 0 && y2 < 0)) {
-            // Calculate where the line crosses y = 0
             const x1 = point1.x;
             const x2 = point2.x;
             const fraction = Math.abs(y1) / (Math.abs(y1) + Math.abs(y2));
             const crossX = x1 + (x2 - x1) * fraction;
-
-            // Insert the zero-crossing point at the exact fractional position
             extendedData.push({ x: crossX, y: 0 });
         }
     }
-    extendedData.push(dataPoints[dataPoints.length - 1]); // Add the last point
+    extendedData.push(dataPoints[dataPoints.length - 1]);
+
+    // Calculate step size based on max labels (e.g., 10)
+    const maxLabels = 10; // Adjust this value as needed
+    const stepSize = Math.max(1, Math.ceil(daysInRange / maxLabels)); // Ensure at least 1
 
     // Create the chart
     chartInstance = new Chart(ctx, {
@@ -95,27 +96,24 @@ function updateChart(start, end) {
                 label: 'Net P&L',
                 data: extendedData,
                 borderWidth: 2,
-                fill: false,
-                tension: 0, // Jagged line
-                pointRadius: (context) => {
-                    const point = context.raw;
-                    return point.y === 0 ? 0 : 4; // Hide zero-crossing points
+                fill: {
+                    target: 'origin',
+                    above: 'rgba(0, 196, 140, 0.2)',
+                    below: 'rgba(255, 92, 92, 0.2)'
                 },
-                pointHoverRadius: (context) => {
-                    const point = context.raw;
-                    return point.y === 0 ? 0 : 6;
-                },
+                tension: 0,
+                pointRadius: (context) => (context.raw.y === 0 ? 0 : 4),
+                pointHoverRadius: (context) => (context.raw.y === 0 ? 0 : 6),
                 segment: {
                     borderColor: (ctx) => {
                         const y1 = ctx.p1.parsed.y;
                         const y2 = ctx.p0.parsed.y;
-                        if (y1 >= 0 && y2 >= 0) return '#00c48c'; // Green above $0
-                        if (y1 <= 0 && y2 <= 0) return '#ff5c5c'; // Red below $0
-                        return y1 > 0 ? '#00c48c' : '#ff5c5c'; // Mixed segment takes endpoint color
+                        if (y1 >= 0 && y2 >= 0) return '#00c48c';
+                        if (y1 <= 0 && y2 <= 0) return '#ff5c5c';
+                        return y1 > 0 ? '#00c48c' : '#ff5c5c';
                     }
                 }
             }, {
-                // Zero line dataset
                 label: 'Zero Line',
                 data: visibleDates.map((_, index) => ({ x: index, y: 0 })),
                 borderColor: '#8a8d98',
@@ -130,21 +128,25 @@ function updateChart(start, end) {
             maintainAspectRatio: false,
             scales: {
                 x: {
-                    type: 'linear', // Use linear scale for numerical x-values
+                    type: 'linear',
                     min: 0,
                     max: visibleDates.length - 1,
                     grid: {
                         color: 'rgba(255, 255, 255, 0.05)',
-                        drawOnChartArea: true, // Ensure grid lines appear
-                        drawTicks: true // Show ticks at visible dates
+                        drawOnChartArea: true,
+                        drawTicks: true,
+                        tickBorderDash: [5, 5]
                     },
                     ticks: {
                         color: '#8a8d98',
+                        stepSize: stepSize, // Use dynamic step size
                         callback: (value, index) => {
-                            return visibleDates[index] || ''; // Show only visible date labels
+                            if (value % stepSize === 0 && value <= visibleDates.length - 1) {
+                                return visibleDates[value] || '';
+                            }
+                            return ''; // Hide labels not at step intervals
                         },
-                        stepSize: 1, // Ensure each date gets a grid line and label
-                        autoSkip: false // Prevent skipping labels
+                        autoSkip: false
                     }
                 },
                 y: {
@@ -158,9 +160,7 @@ function updateChart(start, end) {
                 }
             },
             plugins: {
-                legend: {
-                    display: false
-                },
+                legend: { display: false },
                 tooltip: {
                     backgroundColor: '#1a1d26',
                     titleColor: '#ffffff',
@@ -168,14 +168,26 @@ function updateChart(start, end) {
                     borderColor: '#2a2e3a',
                     borderWidth: 1,
                     displayColors: false,
-                    filter: (tooltipItem) => {
-                        // Show tooltip only for visible data points
-                        return tooltipItem.raw.y !== 0;
-                    },
+                    filter: (tooltipItem) => tooltipItem.raw.y !== 0,
                     callbacks: {
+                        title: (tooltipItems) => {
+                            const index = Math.round(tooltipItems[0].parsed.x);
+                            return visibleDates[index] || '';
+                        },
                         label: (context) => {
-                            let value = context.parsed.y;
-                            return (value >= 0 ? '+$' : '-$') + Math.abs(value);
+                            const index = context.dataIndex;
+                            const currentValue = context.parsed.y;
+                            let previousValue = 0;
+                            if (index > 0) {
+                                for (let i = index - 1; i >= 0; i--) {
+                                    if (extendedData[i].y !== 0) {
+                                        previousValue = extendedData[i].y;
+                                        break;
+                                    }
+                                }
+                            }
+                            const relativeChange = currentValue - previousValue;
+                            return (relativeChange >= 0 ? '+$' : '-$') + Math.abs(relativeChange);
                         }
                     }
                 }
@@ -474,20 +486,27 @@ function initEventListeners() {
         let netPL = 0, totalTrades = 0, totalWins = 0, totalLosses = 0;
         let winningDays = 0, losingDays = 0, tradingDays = new Set();
         let avgWin = 0, avgLoss = 0, winCount = 0, lossCount = 0;
-
+    
+        // Convert start and end to ISO string format (YYYY-MM-DD) for direct comparison
+        const startStr = start.toISOString().slice(0, 10); // e.g., "2025-02-04"
+        const endStr = end.toISOString().slice(0, 10);     // e.g., "2025-02-06"
+    
+        console.log("Selected Range:", startStr, "to", endStr);
+    
         for (const dateStr in sampleTradeData) {
-            const date = new Date(dateStr);
-            if (date >= start && date <= end) {
+            // Compare date strings directly
+            if (dateStr >= startStr && dateStr <= endStr) {
+                console.log("Including date:", dateStr, sampleTradeData[dateStr]);
                 const dayData = sampleTradeData[dateStr];
                 netPL += dayData.profit;
                 totalTrades += dayData.trades;
                 totalWins += dayData.wins;
                 totalLosses += dayData.losses;
                 tradingDays.add(dateStr);
-
+    
                 if (dayData.profit > 0) winningDays++;
                 else if (dayData.profit < 0) losingDays++;
-
+    
                 if (dayData.wins > 0) {
                     avgWin += dayData.profit / dayData.wins;
                     winCount++;
@@ -496,13 +515,22 @@ function initEventListeners() {
                     avgLoss += Math.abs(dayData.profit) / dayData.losses;
                     lossCount++;
                 }
+            } else {
+                console.log("Excluding date:", dateStr);
             }
         }
-
+    
         const tradeWinPercent = totalTrades > 0 ? (totalWins / totalTrades * 100).toFixed(2) : 0;
         const dayWinPercent = tradingDays.size > 0 ? (winningDays / tradingDays.size * 100).toFixed(2) : 0;
         const winLossRatio = avgLoss > 0 ? (avgWin / avgLoss).toFixed(2) : avgWin > 0 ? '∞' : 0;
-
+    
+        console.log("Calculated Metrics:", {
+            netPL: Math.round(netPL),
+            tradeWinPercent,
+            dayWinPercent,
+            tradingDays: Array.from(tradingDays)
+        });
+    
         return {
             netPL: Math.round(netPL),
             tradeWinPercent,
