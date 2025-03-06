@@ -1,6 +1,10 @@
 // Global variable to store chart instance
 let chartInstance = null;
 
+// Global variables for current date range
+let currentStartDate = new Date('2025-02-01');
+let currentEndDate = new Date('2025-02-28');
+
 // Helper functions for calendar
 function getDaysInMonth(year, month) {
     return new Date(year, month + 1, 0).getDate();
@@ -214,10 +218,8 @@ document.addEventListener('DOMContentLoaded', function() {
     initSampleData();
     console.log('Sample data initialized');
     
-    const defaultStart = new Date('2025-02-01');
-    const defaultEnd = new Date('2025-02-28');
-    updateChart(defaultStart, defaultEnd, 'Apex'); // Default to Apex
-    updateDateRange(defaultStart, defaultEnd, 'Apex'); // Default to Apex
+    updateChart(currentStartDate, currentEndDate, 'Apex');
+    updateDateRange(currentStartDate, currentEndDate, 'Apex');
 });
 
 // Initialize event listeners
@@ -404,7 +406,7 @@ function initEventListeners() {
     const monthDisplay = document.querySelector('.calendar-nav h3');
     let currentMonth = 1;
     let currentYear = 2025;
-    updateCalendar(currentYear, currentMonth, 'Apex'); // Default to Apex
+    updateCalendar(currentYear, currentMonth, 'Apex');
     
     prevMonthBtn.addEventListener('click', function() {
         currentMonth--;
@@ -503,9 +505,13 @@ function initEventListeners() {
             const selectedAccount = this.dataset.account;
             accountToggle.childNodes[0].textContent = selectedAccount;
             accountDropdown.style.display = 'none';
-            const start = new Date('2025-02-01'); // Default range, adjust as needed
-            const end = new Date('2025-02-28');
-            updateDateRange(start, end, selectedAccount);
+            
+            // Highlight the selected option
+            accountOptions.forEach(opt => opt.classList.remove('selected'));
+            this.classList.add('selected');
+            
+            // Update with current date range
+            updateDateRange(currentStartDate, currentEndDate, selectedAccount);
             updateCalendar(currentYear, currentMonth, selectedAccount);
             console.log(`Selected account: ${selectedAccount}`);
         });
@@ -518,6 +524,8 @@ function initEventListeners() {
     });
 
     function updateDateRange(start, end, account) {
+        currentStartDate = new Date(start); // Update global date range
+        currentEndDate = new Date(end);
         dateRangeToggle.childNodes[0].textContent = `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
         
         const metrics = calculateMetrics(start, end, account);
