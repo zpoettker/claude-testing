@@ -14,33 +14,50 @@ function getFirstDayOfMonth(year, month) {
     return new Date(year, month, 1).getDay();
 }
 
-// Sample trade data by account
+// Sample trade data by account (individual trades)
 const sampleTradeData = {
-    Apex: {
-        '2025-02-04': { profit: 218, trades: 2, wins: 0, losses: 2 },
-        '2025-02-06': { profit: 285, trades: 5, wins: 0, losses: 5 },
-        '2025-02-11': { profit: -30, trades: 1, wins: 0, losses: 1 },
-        '2025-02-12': { profit: -161, trades: 5, wins: 0, losses: 5 },
-        '2025-02-13': { profit: 323, trades: 3, wins: 2, losses: 1 },
-        '2025-02-14': { profit: 541, trades: 13, wins: 5, losses: 8 },
-        '2025-02-17': { profit: -1340, trades: 12, wins: 1, losses: 11 },
-        '2025-02-19': { profit: 214, trades: 22, wins: 7, losses: 15 },
-        '2025-02-20': { profit: -215, trades: 1, wins: 0, losses: 1 },
-        '2025-02-25': { profit: -268, trades: 2, wins: 0, losses: 2 },
-        '2025-02-26': { profit: 623, trades: 10, wins: 4, losses: 6 },
-        '2025-02-27': { profit: 345, trades: 3, wins: 2, losses: 1 },
-        '2025-02-28': { profit: 489, trades: 11, wins: 2, losses: 9 }
-    },
-    Topstep: {
-        '2025-02-05': { profit: 150, trades: 3, wins: 2, losses: 1 },
-        '2025-02-10': { profit: -50, trades: 2, wins: 0, losses: 2 },
-        '2025-02-15': { profit: 300, trades: 4, wins: 3, losses: 1 }
-    },
-    MFFU: {
-        '2025-02-07': { profit: -100, trades: 1, wins: 0, losses: 1 },
-        '2025-02-20': { profit: 200, trades: 5, wins: 4, losses: 1 },
-        '2025-02-25': { profit: 450, trades: 6, wins: 5, losses: 1 }
-    }
+    Apex: [
+        { date: '2025-02-04', symbol: 'NQ', profit: 100, type: 'Long', quantity: 1 },
+        { date: '2025-02-04', symbol: 'MNQ', profit: 118, type: 'Short', quantity: 2 },
+        { date: '2025-02-06', symbol: 'NQ', profit: -50, type: 'Long', quantity: 1 },
+        { date: '2025-02-06', symbol: 'NQ', profit: 200, type: 'Short', quantity: 1 },
+        { date: '2025-02-06', symbol: 'MNQ', profit: 135, type: 'Long', quantity: 3 },
+        { date: '2025-02-11', symbol: 'NQ', profit: -30, type: 'Long', quantity: 1 },
+        { date: '2025-02-12', symbol: 'MNQ', profit: -80, type: 'Short', quantity: 2 },
+        { date: '2025-02-12', symbol: 'NQ', profit: -81, type: 'Long', quantity: 1 },
+        { date: '2025-02-13', symbol: 'NQ', profit: 150, type: 'Long', quantity: 1 },
+        { date: '2025-02-13', symbol: 'MNQ', profit: 173, type: 'Short', quantity: 2 },
+        { date: '2025-02-14', symbol: 'NQ', profit: 300, type: 'Long', quantity: 1 },
+        { date: '2025-02-14', symbol: 'MNQ', profit: 241, type: 'Short', quantity: 3 },
+        { date: '2025-02-17', symbol: 'NQ', profit: -500, type: 'Long', quantity: 2 },
+        { date: '2025-02-17', symbol: 'MNQ', profit: -840, type: 'Short', quantity: 4 },
+        { date: '2025-02-19', symbol: 'NQ', profit: 100, type: 'Long', quantity: 1 },
+        { date: '2025-02-19', symbol: 'MNQ', profit: 114, type: 'Short', quantity: 2 },
+        { date: '2025-02-20', symbol: 'NQ', profit: -215, type: 'Long', quantity: 1 },
+        { date: '2025-02-25', symbol: 'MNQ', profit: -268, type: 'Short', quantity: 2 },
+        { date: '2025-02-26', symbol: 'NQ', profit: 300, type: 'Long', quantity: 1 },
+        { date: '2025-02-26', symbol: 'MNQ', profit: 323, type: 'Short', quantity: 2 },
+        { date: '2025-02-27', symbol: 'NQ', profit: 150, type: 'Long', quantity: 1 },
+        { date: '2025-02-27', symbol: 'MNQ', profit: 195, type: 'Short', quantity: 2 },
+        { date: '2025-02-28', symbol: 'NQ', profit: 250, type: 'Long', quantity: 1 },
+        { date: '2025-02-28', symbol: 'MNQ', profit: 239, type: 'Short', quantity: 3 }
+    ],
+    Topstep: [
+        { date: '2025-02-05', symbol: 'ES', profit: 75, type: 'Long', quantity: 1 },
+        { date: '2025-02-05', symbol: 'MES', profit: 25, type: 'Short', quantity: 2 },
+        { date: '2025-02-05', symbol: 'ES', profit: 50, type: 'Long', quantity: 1 },
+        { date: '2025-02-10', symbol: 'ES', profit: -30, type: 'Long', quantity: 1 },
+        { date: '2025-02-10', symbol: 'MES', profit: -20, type: 'Short', quantity: 2 },
+        { date: '2025-02-15', symbol: 'ES', profit: 100, type: 'Long', quantity: 1 },
+        { date: '2025-02-15', symbol: 'MES', profit: 200, type: 'Short', quantity: 2 }
+    ],
+    MFFU: [
+        { date: '2025-02-07', symbol: 'CL', profit: -100, type: 'Long', quantity: 1 },
+        { date: '2025-02-20', symbol: 'CL', profit: 50, type: 'Short', quantity: 2 },
+        { date: '2025-02-20', symbol: 'MCL', profit: 150, type: 'Long', quantity: 3 },
+        { date: '2025-02-25', symbol: 'CL', profit: 200, type: 'Long', quantity: 1 },
+        { date: '2025-02-25', symbol: 'MCL', profit: 250, type: 'Short', quantity: 2 }
+    ]
 };
 
 // Define updateChart with account parameter
@@ -56,13 +73,21 @@ function updateChart(start, end, account) {
         chartInstance.destroy();
     }
 
-    const accountData = sampleTradeData[account] || {};
+    const trades = sampleTradeData[account] || {};
     const startDate = new Date(start);
     const endDate = new Date(end);
     const daysInRange = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
     const visibleDates = [];
     const dataPoints = [];
     let cumulativePL = 0;
+
+    // Aggregate trades by date
+    const dailyPL = {};
+    trades.forEach(trade => {
+        if (trade.date >= startDate.toISOString().slice(0, 10) && trade.date <= endDate.toISOString().slice(0, 10)) {
+            dailyPL[trade.date] = (dailyPL[trade.date] || 0) + trade.profit;
+        }
+    });
 
     for (let i = 0; i < daysInRange; i++) {
         const currentDate = new Date(startDate);
@@ -73,8 +98,8 @@ function updateChart(start, end, account) {
         if (i === 0) {
             dataPoints.push({ x: 0, y: 0 });
         } else {
-            if (accountData[dateStr]) {
-                cumulativePL += accountData[dateStr].profit;
+            if (dailyPL[dateStr]) {
+                cumulativePL += dailyPL[dateStr];
             }
             dataPoints.push({ x: i, y: Math.round(cumulativePL) });
         }
@@ -439,7 +464,19 @@ function initEventListeners() {
             
             const daysInMonth = getDaysInMonth(year, month);
             const firstDay = getFirstDayOfMonth(year, month);
-            const accountData = sampleTradeData[account] || {};
+            const trades = sampleTradeData[account] || [];
+
+            // Aggregate trades by date
+            const dailyData = {};
+            trades.forEach(trade => {
+                const [tradeYear, tradeMonth] = trade.date.split('-').map(Number);
+                if (tradeYear === year && tradeMonth - 1 === month) {
+                    dailyData[trade.date] = dailyData[trade.date] || { profit: 0, trades: 0, wins: 0 };
+                    dailyData[trade.date].profit += trade.profit;
+                    dailyData[trade.date].trades += 1;
+                    if (trade.profit > 0) dailyData[trade.date].wins += 1;
+                }
+            });
 
             for (let i = 0; i < firstDay; i++) {
                 const emptyDay = document.createElement('div');
@@ -458,8 +495,8 @@ function initEventListeners() {
                 dayDiv.appendChild(dayNumber);
                 
                 const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                if (accountData[dateKey]) {
-                    const { profit, trades: tradeCount, wins } = accountData[dateKey];
+                if (dailyData[dateKey]) {
+                    const { profit, trades: tradeCount, wins } = dailyData[dateKey];
                     dayDiv.className += profit >= 0 ? ' profit' : ' loss';
                     
                     const profitDiv = document.createElement('div');
@@ -545,7 +582,7 @@ function initEventListeners() {
     }
 
     function calculateMetrics(start, end, account) {
-        const accountData = sampleTradeData[account] || {};
+        const trades = sampleTradeData[account] || [];
         let netPL = 0, totalTrades = 0, totalWins = 0, totalLosses = 0;
         let winningDays = 0, losingDays = 0, tradingDays = new Set();
         let avgWin = 0, avgLoss = 0, winCount = 0, lossCount = 0;
@@ -553,44 +590,37 @@ function initEventListeners() {
         const startStr = start.toISOString().slice(0, 10);
         const endStr = end.toISOString().slice(0, 10);
     
-        console.log("Selected Range:", startStr, "to", endStr, "for account:", account);
+        // Filter trades within date range
+        const filteredTrades = trades.filter(trade => trade.date >= startStr && trade.date <= endStr);
     
-        for (const dateStr in accountData) {
-            if (dateStr >= startStr && dateStr <= endStr) {
-                console.log("Including date:", dateStr, accountData[dateStr]);
-                const dayData = accountData[dateStr];
-                netPL += dayData.profit;
-                totalTrades += dayData.trades;
-                totalWins += dayData.wins;
-                totalLosses += dayData.losses;
-                tradingDays.add(dateStr);
-    
-                if (dayData.profit > 0) winningDays++;
-                else if (dayData.profit < 0) losingDays++;
-    
-                if (dayData.wins > 0) {
-                    avgWin += dayData.profit / dayData.wins;
-                    winCount++;
-                }
-                if (dayData.losses > 0) {
-                    avgLoss += Math.abs(dayData.profit) / dayData.losses;
-                    lossCount++;
-                }
-            } else {
-                console.log("Excluding date:", dateStr);
+        // Aggregate by day for day-based metrics
+        const dailyProfits = {};
+        filteredTrades.forEach(trade => {
+            netPL += trade.profit;
+            totalTrades += 1;
+            if (trade.profit > 0) {
+                totalWins += 1;
+                avgWin += trade.profit;
+                winCount += 1;
+            } else if (trade.profit < 0) {
+                totalLosses += 1;
+                avgLoss += Math.abs(trade.profit);
+                lossCount += 1;
             }
+    
+            tradingDays.add(trade.date);
+            dailyProfits[trade.date] = (dailyProfits[trade.date] || 0) + trade.profit;
+        });
+    
+        // Calculate winning/losing days
+        for (const date in dailyProfits) {
+            if (dailyProfits[date] > 0) winningDays++;
+            else if (dailyProfits[date] < 0) losingDays++;
         }
     
         const tradeWinPercent = totalTrades > 0 ? (totalWins / totalTrades * 100).toFixed(2) : 0;
         const dayWinPercent = tradingDays.size > 0 ? (winningDays / tradingDays.size * 100).toFixed(2) : 0;
         const winLossRatio = avgLoss > 0 ? (avgWin / avgLoss).toFixed(2) : avgWin > 0 ? '∞' : 0;
-    
-        console.log("Calculated Metrics:", {
-            netPL: Math.round(netPL),
-            tradeWinPercent,
-            dayWinPercent,
-            tradingDays: Array.from(tradingDays)
-        });
     
         return {
             netPL: Math.round(netPL),
