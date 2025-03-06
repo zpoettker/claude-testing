@@ -10,25 +10,37 @@ function getFirstDayOfMonth(year, month) {
     return new Date(year, month, 1).getDay();
 }
 
-// Sample trade data by date
+// Sample trade data by account
 const sampleTradeData = {
-    '2025-02-04': { profit: 218, trades: 2, wins: 0, losses: 2 },
-    '2025-02-06': { profit: 285, trades: 5, wins: 0, losses: 5 },
-    '2025-02-11': { profit: -30, trades: 1, wins: 0, losses: 1 },
-    '2025-02-12': { profit: -161, trades: 5, wins: 0, losses: 5 },
-    '2025-02-13': { profit: 323, trades: 3, wins: 2, losses: 1 },
-    '2025-02-14': { profit: 541, trades: 13, wins: 5, losses: 8 },
-    '2025-02-17': { profit: -1340, trades: 12, wins: 1, losses: 11 },
-    '2025-02-19': { profit: 214, trades: 22, wins: 7, losses: 15 },
-    '2025-02-20': { profit: -215, trades: 1, wins: 0, losses: 1 },
-    '2025-02-25': { profit: -268, trades: 2, wins: 0, losses: 2 },
-    '2025-02-26': { profit: 623, trades: 10, wins: 4, losses: 6 },
-    '2025-02-27': { profit: 345, trades: 3, wins: 2, losses: 1 },
-    '2025-02-28': { profit: 489, trades: 11, wins: 2, losses: 9 }
+    Apex: {
+        '2025-02-04': { profit: 218, trades: 2, wins: 0, losses: 2 },
+        '2025-02-06': { profit: 285, trades: 5, wins: 0, losses: 5 },
+        '2025-02-11': { profit: -30, trades: 1, wins: 0, losses: 1 },
+        '2025-02-12': { profit: -161, trades: 5, wins: 0, losses: 5 },
+        '2025-02-13': { profit: 323, trades: 3, wins: 2, losses: 1 },
+        '2025-02-14': { profit: 541, trades: 13, wins: 5, losses: 8 },
+        '2025-02-17': { profit: -1340, trades: 12, wins: 1, losses: 11 },
+        '2025-02-19': { profit: 214, trades: 22, wins: 7, losses: 15 },
+        '2025-02-20': { profit: -215, trades: 1, wins: 0, losses: 1 },
+        '2025-02-25': { profit: -268, trades: 2, wins: 0, losses: 2 },
+        '2025-02-26': { profit: 623, trades: 10, wins: 4, losses: 6 },
+        '2025-02-27': { profit: 345, trades: 3, wins: 2, losses: 1 },
+        '2025-02-28': { profit: 489, trades: 11, wins: 2, losses: 9 }
+    },
+    Topstep: {
+        '2025-02-05': { profit: 150, trades: 3, wins: 2, losses: 1 },
+        '2025-02-10': { profit: -50, trades: 2, wins: 0, losses: 2 },
+        '2025-02-15': { profit: 300, trades: 4, wins: 3, losses: 1 }
+    },
+    MFFU: {
+        '2025-02-07': { profit: -100, trades: 1, wins: 0, losses: 1 },
+        '2025-02-20': { profit: 200, trades: 5, wins: 4, losses: 1 },
+        '2025-02-25': { profit: 450, trades: 6, wins: 5, losses: 1 }
+    }
 };
 
-// Define updateChart at the top level so it’s accessible globally
-function updateChart(start, end) {
+// Define updateChart with account parameter
+function updateChart(start, end, account) {
     const canvas = document.getElementById('pnlChart');
     if (!canvas) {
         console.error('Chart canvas element not found');
@@ -40,7 +52,7 @@ function updateChart(start, end) {
         chartInstance.destroy();
     }
 
-    // Prepare data
+    const accountData = sampleTradeData[account] || {};
     const startDate = new Date(start);
     const endDate = new Date(end);
     const daysInRange = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
@@ -57,8 +69,8 @@ function updateChart(start, end) {
         if (i === 0) {
             dataPoints.push({ x: 0, y: 0 });
         } else {
-            if (sampleTradeData[dateStr]) {
-                cumulativePL += sampleTradeData[dateStr].profit;
+            if (accountData[dateStr]) {
+                cumulativePL += accountData[dateStr].profit;
             }
             dataPoints.push({ x: i, y: Math.round(cumulativePL) });
         }
@@ -204,7 +216,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const defaultStart = new Date('2025-02-01');
     const defaultEnd = new Date('2025-02-28');
-    updateChart(defaultStart, defaultEnd);
+    updateChart(defaultStart, defaultEnd, 'Apex'); // Default to Apex
+    updateDateRange(defaultStart, defaultEnd, 'Apex'); // Default to Apex
 });
 
 // Initialize event listeners
@@ -280,7 +293,8 @@ function initEventListeners() {
                     end = today;
                     break;
             }
-            updateDateRange(start, end);
+            const selectedAccount = document.querySelector('.account-toggle').childNodes[0].textContent;
+            updateDateRange(start, end, selectedAccount);
             dateRangeDropdown.style.display = 'none';
         });
     });
@@ -377,7 +391,8 @@ function initEventListeners() {
 
     applyRangeBtn.addEventListener('click', () => {
         if (startDate && endDate) {
-            updateDateRange(startDate, endDate);
+            const selectedAccount = document.querySelector('.account-toggle').childNodes[0].textContent;
+            updateDateRange(startDate, endDate, selectedAccount);
             dateRangeDropdown.style.display = 'none';
         }
     });
@@ -389,7 +404,7 @@ function initEventListeners() {
     const monthDisplay = document.querySelector('.calendar-nav h3');
     let currentMonth = 1;
     let currentYear = 2025;
-    updateCalendar(currentYear, currentMonth);
+    updateCalendar(currentYear, currentMonth, 'Apex'); // Default to Apex
     
     prevMonthBtn.addEventListener('click', function() {
         currentMonth--;
@@ -397,7 +412,8 @@ function initEventListeners() {
             currentMonth = 11;
             currentYear--;
         }
-        updateCalendar(currentYear, currentMonth);
+        const selectedAccount = document.querySelector('.account-toggle').childNodes[0].textContent;
+        updateCalendar(currentYear, currentMonth, selectedAccount);
     });
     
     nextMonthBtn.addEventListener('click', function() {
@@ -406,10 +422,11 @@ function initEventListeners() {
             currentMonth = 0;
             currentYear++;
         }
-        updateCalendar(currentYear, currentMonth);
+        const selectedAccount = document.querySelector('.account-toggle').childNodes[0].textContent;
+        updateCalendar(currentYear, currentMonth, selectedAccount);
     });
 
-    function updateCalendar(year, month) {
+    function updateCalendar(year, month, account) {
         try {
             const months = ['January', 'February', 'March', 'April', 'May', 'June', 
                           'July', 'August', 'September', 'October', 'November', 'December'];
@@ -420,6 +437,7 @@ function initEventListeners() {
             
             const daysInMonth = getDaysInMonth(year, month);
             const firstDay = getFirstDayOfMonth(year, month);
+            const accountData = sampleTradeData[account] || {};
 
             for (let i = 0; i < firstDay; i++) {
                 const emptyDay = document.createElement('div');
@@ -438,8 +456,8 @@ function initEventListeners() {
                 dayDiv.appendChild(dayNumber);
                 
                 const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                if (sampleTradeData[dateKey]) {
-                    const { profit, trades: tradeCount, wins } = sampleTradeData[dateKey];
+                if (accountData[dateKey]) {
+                    const { profit, trades: tradeCount, wins } = accountData[dateKey];
                     dayDiv.className += profit >= 0 ? ' profit' : ' loss';
                     
                     const profitDiv = document.createElement('div');
@@ -485,6 +503,10 @@ function initEventListeners() {
             const selectedAccount = this.dataset.account;
             accountToggle.childNodes[0].textContent = selectedAccount;
             accountDropdown.style.display = 'none';
+            const start = new Date('2025-02-01'); // Default range, adjust as needed
+            const end = new Date('2025-02-28');
+            updateDateRange(start, end, selectedAccount);
+            updateCalendar(currentYear, currentMonth, selectedAccount);
             console.log(`Selected account: ${selectedAccount}`);
         });
     });
@@ -495,15 +517,16 @@ function initEventListeners() {
         }
     });
 
-    function updateDateRange(start, end) {
+    function updateDateRange(start, end, account) {
         dateRangeToggle.childNodes[0].textContent = `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
         
-        const metrics = calculateMetrics(start, end);
+        const metrics = calculateMetrics(start, end, account);
         updateDashboardMetrics(metrics);
-        updateChart(start, end);
+        updateChart(start, end, account);
     }
 
-    function calculateMetrics(start, end) {
+    function calculateMetrics(start, end, account) {
+        const accountData = sampleTradeData[account] || {};
         let netPL = 0, totalTrades = 0, totalWins = 0, totalLosses = 0;
         let winningDays = 0, losingDays = 0, tradingDays = new Set();
         let avgWin = 0, avgLoss = 0, winCount = 0, lossCount = 0;
@@ -511,12 +534,12 @@ function initEventListeners() {
         const startStr = start.toISOString().slice(0, 10);
         const endStr = end.toISOString().slice(0, 10);
     
-        console.log("Selected Range:", startStr, "to", endStr);
+        console.log("Selected Range:", startStr, "to", endStr, "for account:", account);
     
-        for (const dateStr in sampleTradeData) {
+        for (const dateStr in accountData) {
             if (dateStr >= startStr && dateStr <= endStr) {
-                console.log("Including date:", dateStr, sampleTradeData[dateStr]);
-                const dayData = sampleTradeData[dateStr];
+                console.log("Including date:", dateStr, accountData[dateStr]);
+                const dayData = accountData[dateStr];
                 netPL += dayData.profit;
                 totalTrades += dayData.trades;
                 totalWins += dayData.wins;
