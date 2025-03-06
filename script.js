@@ -43,20 +43,19 @@ function updateChart(start, end) {
     // Prepare data
     const startDate = new Date(start);
     const endDate = new Date(end);
-    const daysInRange = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1; // Include start day
+    const daysInRange = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
     const visibleDates = [];
     const dataPoints = [];
     let cumulativePL = 0;
 
-    // Generate visible dates and data points (starting at $0)
     for (let i = 0; i < daysInRange; i++) {
         const currentDate = new Date(startDate);
         currentDate.setDate(startDate.getDate() + i);
-        const dateStr = currentDate.toISOString().slice(0, 10); // e.g., "2025-02-04"
-        visibleDates.push(dateStr.slice(5)); // "02-04" for x-axis labels
+        const dateStr = currentDate.toISOString().slice(0, 10);
+        visibleDates.push(dateStr.slice(5));
 
         if (i === 0) {
-            dataPoints.push({ x: 0, y: 0 }); // Start at $0, x=0
+            dataPoints.push({ x: 0, y: 0 });
         } else {
             if (sampleTradeData[dateStr]) {
                 cumulativePL += sampleTradeData[dateStr].profit;
@@ -65,7 +64,6 @@ function updateChart(start, end) {
         }
     }
 
-    // Add invisible zero-crossing points (unchanged from original)
     const extendedData = [];
     for (let i = 0; i < dataPoints.length - 1; i++) {
         const point1 = dataPoints[i];
@@ -84,11 +82,9 @@ function updateChart(start, end) {
     }
     extendedData.push(dataPoints[dataPoints.length - 1]);
 
-    // Calculate step size based on max labels (e.g., 10)
-    const maxLabels = 10; // Adjust this value as needed
-    const stepSize = Math.max(1, Math.ceil(daysInRange / maxLabels)); // Ensure at least 1
+    const maxLabels = 10;
+    const stepSize = Math.max(1, Math.ceil(daysInRange / maxLabels));
 
-    // Create the chart
     chartInstance = new Chart(ctx, {
         type: 'line',
         data: {
@@ -139,12 +135,12 @@ function updateChart(start, end) {
                     },
                     ticks: {
                         color: '#8a8d98',
-                        stepSize: stepSize, // Use dynamic step size
+                        stepSize: stepSize,
                         callback: (value, index) => {
                             if (value % stepSize === 0 && value <= visibleDates.length - 1) {
                                 return visibleDates[value] || '';
                             }
-                            return ''; // Hide labels not at step intervals
+                            return '';
                         },
                         autoSkip: false
                     }
@@ -206,7 +202,6 @@ document.addEventListener('DOMContentLoaded', function() {
     initSampleData();
     console.log('Sample data initialized');
     
-    // Initialize chart with default range (February 2025)
     const defaultStart = new Date('2025-02-01');
     const defaultEnd = new Date('2025-02-28');
     updateChart(defaultStart, defaultEnd);
@@ -217,6 +212,8 @@ function initEventListeners() {
     const sidebarToggle = document.querySelector('.sidebar-toggle');
     const sidebar = document.querySelector('.sidebar');
     const container = document.querySelector('.container');
+    const accountSelector = document.querySelector('.account-selector');
+
     sidebarToggle.addEventListener('click', function() {
         sidebar.classList.toggle('collapsed');
         container.classList.toggle('sidebar-collapsed');
@@ -474,12 +471,36 @@ function initEventListeners() {
         showAddTradeModal();
     });
 
+    // Account Selector Dropdown
+    const accountToggle = document.querySelector('.account-toggle');
+    const accountDropdown = document.querySelector('.account-dropdown');
+    const accountOptions = document.querySelectorAll('.account-option');
+
+    accountToggle.addEventListener('click', function() {
+        accountDropdown.style.display = accountDropdown.style.display === 'none' ? 'block' : 'none';
+    });
+
+    accountOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            const selectedAccount = this.dataset.account;
+            accountToggle.childNodes[0].textContent = selectedAccount;
+            accountDropdown.style.display = 'none';
+            console.log(`Selected account: ${selectedAccount}`);
+        });
+    });
+
+    document.addEventListener('click', function(event) {
+        if (!accountSelector.contains(event.target)) {
+            accountDropdown.style.display = 'none';
+        }
+    });
+
     function updateDateRange(start, end) {
         dateRangeToggle.childNodes[0].textContent = `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
         
         const metrics = calculateMetrics(start, end);
         updateDashboardMetrics(metrics);
-        updateChart(start, end); // Update chart with new range
+        updateChart(start, end);
     }
 
     function calculateMetrics(start, end) {
@@ -487,14 +508,12 @@ function initEventListeners() {
         let winningDays = 0, losingDays = 0, tradingDays = new Set();
         let avgWin = 0, avgLoss = 0, winCount = 0, lossCount = 0;
     
-        // Convert start and end to ISO string format (YYYY-MM-DD) for direct comparison
-        const startStr = start.toISOString().slice(0, 10); // e.g., "2025-02-04"
-        const endStr = end.toISOString().slice(0, 10);     // e.g., "2025-02-06"
+        const startStr = start.toISOString().slice(0, 10);
+        const endStr = end.toISOString().slice(0, 10);
     
         console.log("Selected Range:", startStr, "to", endStr);
     
         for (const dateStr in sampleTradeData) {
-            // Compare date strings directly
             if (dateStr >= startStr && dateStr <= endStr) {
                 console.log("Including date:", dateStr, sampleTradeData[dateStr]);
                 const dayData = sampleTradeData[dateStr];
@@ -585,7 +604,7 @@ function formatCurrency(value) {
     return (value >= 0 ? '$' : '-$') + Math.abs(value).toFixed(0);
 }
 
-// Sidebar collapse styles (unchanged from your original)
+// Sidebar collapse styles
 document.head.insertAdjacentHTML('beforeend', `
 <style>
 .sidebar.collapsed {

@@ -300,16 +300,16 @@ body {
 }
 
 .calendar-nav {
-    position: relative; /* Container for absolute positioning */
+    position: relative;
     width: 100%;
-    text-align: center; /* Center the h3 text */
-    margin-bottom: 10px; /* Spacing below */
+    text-align: center;
+    margin-bottom: 10px;
 }
 
 .calendar-nav h3 {
     margin: 0;
     font-size: 16px;
-    display: inline-block; /* Allow it to sit naturally in the center */
+    display: inline-block;
 }
 
 .calendar-nav button {
@@ -318,19 +318,18 @@ body {
     color: var(--text-secondary);
     cursor: pointer;
     font-size: 16px;
-    position: absolute; /* Absolute positioning relative to .calendar-nav */
-    top: 50%; /* Vertically center the arrows */
-    transform: translateY(-50%); /* Adjust for button height */
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
 }
 
 .calendar-nav .prev-month {
-    left: calc(50% - 90px); /* Fixed distance left of center */
+    left: calc(50% - 90px);
 }
 
 .calendar-nav .next-month {
-    right: calc(50% - 90px); /* Fixed distance right of center */
+    right: calc(50% - 90px);
 }
-
 
 .weekdays {
     display: grid;
@@ -481,10 +480,10 @@ body {
 }
 
 .chart-container {
-    height: 350px; /* Slightly taller for better visibility */
+    height: 350px;
     position: relative;
     width: 100%;
-    max-width: 100%; /* Ensure it fits container */
+    max-width: 100%;
 }
 
 /* Trades Table */
@@ -683,6 +682,52 @@ td.loss {
     background-color: #00a373;
 }
 
+/* Account Selector Dropdown */
+.account-selector {
+    position: relative;
+}
+
+.account-toggle {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.account-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    padding: 5px 0;
+    z-index: 1000;
+    width: 120px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.account-option {
+    display: block;
+    width: 100%;
+    padding: 5px 10px;
+    background: none;
+    border: none;
+    color: var(--text-color);
+    text-align: left;
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+.account-option:hover {
+    background-color: var(--hover-color);
+}
+
 /* Responsive Adjustments */
 @media (max-width: 1200px) {
     .bottom-section {
@@ -722,6 +767,6 @@ td.loss {
     }
     
     .chart-container {
-        height: 300px; /* Adjust for smaller screens */
+        height: 300px;
     }
 }
