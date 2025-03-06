@@ -517,6 +517,17 @@ function initEventListeners() {
         });
     });
 
+    // Set initial selected account
+    const defaultAccount = 'Apex';
+    accountToggle.childNodes[0].textContent = defaultAccount;
+    accountOptions.forEach(opt => {
+        if (opt.dataset.account === defaultAccount) {
+            opt.classList.add('selected');
+        } else {
+            opt.classList.remove('selected');
+        }
+    });
+
     document.addEventListener('click', function(event) {
         if (!accountSelector.contains(event.target)) {
             accountDropdown.style.display = 'none';

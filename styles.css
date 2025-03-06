@@ -728,6 +728,11 @@ td.loss {
     background-color: var(--hover-color);
 }
 
+.account-option.selected {
+    background-color: var(--profit-color);
+    color: #003b2c;
+}
+
 /* Responsive Adjustments */
 @media (max-width: 1200px) {
     .bottom-section {
