@@ -233,6 +233,45 @@ function updateChart(start, end, account) {
     });
 }
 
+// Function to update the Recent Trades table
+function updateRecentTrades(start, end, account) {
+    const trades = sampleTradeData[account] || [];
+    const startStr = start.toISOString().slice(0, 10);
+    const endStr = end.toISOString().slice(0, 10);
+
+    // Filter trades within the date range and sort by date (descending)
+    const filteredTrades = trades
+        .filter(trade => trade.date >= startStr && trade.date <= endStr)
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .slice(0, 20); // Take the 20 most recent
+
+    const tbody = document.getElementById('recentTradesBody');
+    tbody.innerHTML = ''; // Clear existing rows
+
+    filteredTrades.forEach(trade => {
+        const row = document.createElement('tr');
+        const profitClass = trade.profit > 0 ? 'profit' : trade.profit < 0 ? 'loss' : '';
+        
+        row.innerHTML = `
+            <td>${formatDate(trade.date)}</td>
+            <td>${trade.symbol}</td>
+            <td class="${profitClass}">${formatCurrency(trade.profit)}</td>
+        `;
+        tbody.appendChild(row);
+    });
+
+    // If no trades, show a placeholder message
+    if (filteredTrades.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-secondary);">No trades found for this period</td></tr>';
+    }
+}
+
+// Helper function to format date (e.g., "02/28/2025")
+function formatDate(dateStr) {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+}
+
 // DOMContentLoaded event listener to initialize the app
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM fully loaded');
@@ -263,14 +302,6 @@ function initEventListeners() {
     menuItems.forEach(item => {
         item.addEventListener('click', function() {
             menuItems.forEach(i => i.classList.remove('active'));
-            this.classList.add('active');
-        });
-    });
-
-    const tabs = document.querySelectorAll('.tab');
-    tabs.forEach(tab => {
-        tab.addEventListener('click', function() {
-            tabs.forEach(t => t.classList.remove('active'));
             this.classList.add('active');
         });
     });
@@ -579,6 +610,7 @@ function initEventListeners() {
         const metrics = calculateMetrics(start, end, account);
         updateDashboardMetrics(metrics);
         updateChart(start, end, account);
+        updateRecentTrades(start, end, account); // Added to update Recent Trades
     }
 
     function calculateMetrics(start, end, account) {

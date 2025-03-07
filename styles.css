@@ -470,6 +470,21 @@ body {
     padding: 20px;
 }
 
+/* Chart Container */
+.chart-container {
+    height: 350px;
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+}
+
+/* Recent Trades Section */
+.recent-trades-section {
+    height: 425px; /* Matches chart-section total height: 350px (chart) + 20px padding-top + 20px padding-bottom */
+    display: flex;
+    flex-direction: column;
+}
+
 .section-header {
     margin-bottom: 15px;
 }
@@ -479,39 +494,16 @@ body {
     font-weight: 600;
 }
 
-.chart-container {
-    height: 350px;
-    position: relative;
-    width: 100%;
-    max-width: 100%;
-}
-
-/* Trades Table */
-.trades-tabs {
-    display: flex;
-    margin-bottom: 15px;
-}
-
-.tab {
-    padding: 8px 15px;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-secondary);
-}
-
-.tab.active {
-    color: var(--text-color);
-    border-bottom: 2px solid var(--profit-color);
-}
-
 .trades-table {
-    overflow-x: auto;
+    flex: 1; /* Takes up remaining space in the flex container */
+    overflow-y: auto; /* Enables vertical scrolling when content overflows */
+    max-height: 100%; /* Ensures it respects the parent’s height */
 }
 
-table {
+.trades-table table {
     width: 100%;
     border-collapse: collapse;
+    min-width: 300px; /* Ensures table doesn’t shrink too much on smaller screens */
 }
 
 th {
@@ -520,6 +512,10 @@ th {
     color: var(--text-secondary);
     font-weight: 500;
     border-bottom: 1px solid var(--border-color);
+    position: sticky; /* Keeps header at the top when scrolling */
+    top: 0;
+    background-color: var(--card-bg); /* Matches background to avoid transparency */
+    z-index: 1; /* Ensures header stays above scrolling content */
 }
 
 td {
@@ -738,6 +734,10 @@ td.loss {
     .bottom-section {
         grid-template-columns: 1fr;
     }
+    .recent-trades-section {
+        height: auto; /* Allows it to grow naturally on smaller screens */
+        max-height: 400px; /* Optional: caps height on mobile for better UX */
+    }
 }
 
 @media (max-width: 768px) {
@@ -773,5 +773,10 @@ td.loss {
     
     .chart-container {
         height: 300px;
+    }
+    
+    .recent-trades-section {
+        height: auto; /* Flexible height on very small screens */
+        max-height: 350px; /* Matches adjusted chart height + padding */
     }
 }

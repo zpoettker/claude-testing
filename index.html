@@ -194,9 +194,8 @@
                     </div>
                 </div>
                 <div class="recent-trades-section">
-                    <div class="trades-tabs">
-                        <div class="tab active">RECENT TRADES</div>
-                        <div class="tab">OPEN POSITIONS</div>
+                    <div class="section-header">
+                        <h3>Recent Trades</h3>
                     </div>
                     <div class="trades-table">
                         <table>
@@ -207,32 +206,8 @@
                                     <th>Net P&L</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <tr>
-                                    <td>02/28/2025</td>
-                                    <td>MNQ</td>
-                                    <td class="profit">$78</td>
-                                </tr>
-                                <tr>
-                                    <td>02/28/2025</td>
-                                    <td>NQ</td>
-                                    <td>$0</td>
-                                </tr>
-                                <tr>
-                                    <td>02/28/2025</td>
-                                    <td>NQ</td>
-                                    <td class="profit">$1,700</td>
-                                </tr>
-                                <tr>
-                                    <td>02/28/2025</td>
-                                    <td>NQ</td>
-                                    <td class="loss">-$55</td>
-                                </tr>
-                                <tr>
-                                    <td>02/28/2025</td>
-                                    <td>NQ</td>
-                                    <td class="loss">-$180</td>
-                                </tr>
+                            <tbody id="recentTradesBody">
+                                <!-- Trades will be dynamically inserted here -->
                             </tbody>
                         </table>
                     </div>
