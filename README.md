@@ -36,6 +36,10 @@ Profile page will have the personal information of the user stored for change or
 
 This page will have a dropdown for which account to upload trades to, and will have a dropdown for which broker they are uploading trades from. It will also have an upload box for the user to drop the file. Once the file is uploaded successfully, the user will be navigated back to the dashboard screen, and will get a green prompt professing the successful upload of the trades. If the file is not uploaded successfully, the user will stay on the file upload page, and will receive a red prompt, saying the upload was unsuccessful and why.
 
+    -Landing/Pricing Page:
+
+The landing page will basically be the sale page, where new users can look at what the app will provide, look at reviews, look at pricing options, and ultimately be the first page they ever see. It must be desgined well to leave a great first impression on possible new users.
+
 
 Tech Stack:
 
